@@ -1,0 +1,43 @@
+{
+  "id": "d616-extempore-effects",
+  "name": "d616-extempore-effects",
+  "title": "D616 Extempore Effects",
+  "description": "Crie efeitos rápidos (tipo Extempore Effects) a partir do chat no sistema Multiverse-D616. Opção A: adiciona um efeito permanente (até remover) como condição no token usando o ícone M.",
+  "type": "module",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "RodrigoSinistro"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "esmodules": [
+    "scripts/d616-extempore-effects.mjs"
+  ],
+  "styles": [
+    "styles/d616-extempore-effects.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "lang/pt-BR.json"
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "multiverse-d616",
+        "type": "system"
+      }
+    ]
+  }
+}

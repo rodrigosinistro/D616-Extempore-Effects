@@ -1,0 +1,11 @@
+{
+  "D616EE.CreateEffect": "Criar efeito (Extempore) neste(s) token(s)",
+  "D616EE.RemoveEffect": "Remover este efeito (Extempore) deste(s) token(s)",
+  "D616EE.RemoveAll": "Remover TODOS os efeitos (Extempore) deste(s) token(s)",
+  "D616EE.NoTargets": "Selecione ao menos um token (ou envie a rolagem pelo token do personagem).",
+  "D616EE.Applied": "Efeito aplicado: {name}",
+  "D616EE.Removed": "Efeito removido: {name}",
+  "D616EE.RemovedAll": "Efeitos Extempore removidos.",
+  "D616EE.NameFallback": "Efeito",
+  "D616EE.ContextMenuTitle": "Extempore Effects"
+}

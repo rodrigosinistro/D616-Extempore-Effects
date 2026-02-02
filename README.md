@@ -28,22 +28,8 @@ Módulo para o **Foundry VTT v13** inspirado no PF2e Extempore Effects, adaptado
 
 Use este endereço no Foundry (**Install Module**):
 
-https://github.com/rodrigosinistro/D616-Extempore-Effects/releases/latest/download/module.json
-
-> Importante: ao criar a Release `v0.1.7` no GitHub, anexe os arquivos:
-> - `module.json`
-> - `module.zip`
->
-> Assim os links `manifest`/`download` do módulo ficam válidos e o Foundry consegue atualizar automaticamente.
+https://raw.githubusercontent.com/rodrigosinistro/D616-Extempore-Effects/main/module.json
 
 ## Repositório
 
 https://github.com/rodrigosinistro/D616-Extempore-Effects
-
-
-## Publicar no GitHub (Foundry)
-Na sua Release (não-draft), anexe estes assets com estes nomes exatos:
-- **module.json** (este arquivo do repositório)
-- **module.zip** (o zip do módulo; pode ser este mesmo zip renomeado)
-
-O Foundry instala/atualiza via o Manifest URL acima.

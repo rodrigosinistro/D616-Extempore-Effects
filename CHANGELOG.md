@@ -1,3 +1,6 @@
+## 0.1.7
+- Manifest/download ajustados para o padrão do Foundry com assets estáveis (module.json e module.zip).
+
 # Changelog
 
 ## 0.1.6

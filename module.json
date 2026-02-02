@@ -4,7 +4,7 @@
   "title": "D616 Extempore Effects",
   "description": "Crie efeitos rápidos (tipo Extempore Effects) a partir do chat no sistema Multiverse-D616. Opção A: adiciona um efeito permanente (até remover) como condição no token usando o ícone M e registrando descrição na barra de condições.",
   "type": "module",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "authors": [
     {
       "name": "RodrigoSinistro"
@@ -43,5 +43,5 @@
   "url": "https://github.com/rodrigosinistro/D616-Extempore-Effects",
   "bugs": "https://github.com/rodrigosinistro/D616-Extempore-Effects/issues",
   "manifest": "https://raw.githubusercontent.com/rodrigosinistro/D616-Extempore-Effects/main/module.json",
-  "download": "https://github.com/rodrigosinistro/D616-Extempore-Effects/releases/download/v0.1.7/d616-extempore-effects-v0.1.7.zip"
+  "download": "https://github.com/rodrigosinistro/D616-Extempore-Effects/releases/download/v0.1.8/d616-extempore-effects-v0.1.8.zip"
 }

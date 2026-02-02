@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+- Corrigido `manifest` para URL **estável** (`releases/latest/download/module.json`) conforme padrão do Foundry.
+- Atualizado `download` para a release `v0.1.6`.
+
 ## 0.1.5
 - Incluído endereço de **manifest** (GitHub Releases) no README.
 - `module.json`: adicionados campos `manifest` e `download` apontando para a release `v0.1.5`.

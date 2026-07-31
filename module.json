@@ -2,17 +2,17 @@
   "id": "d616-extempore-effects",
   "name": "d616-extempore-effects",
   "title": "D616 Extempore Effects",
-  "description": "Crie efeitos rápidos (tipo Extempore Effects) a partir do chat no sistema Multiverse-D616. Opção A: adiciona um efeito permanente (até remover) como condição no token usando o ícone M e registrando descrição na barra de condições.",
+  "description": "Crie efeitos rápidos (tipo Extempore Effects) a partir do chat no sistema Multiverse-D616 para Foundry VTT v14. Adiciona efeitos permanentes (até remover) como condições no token usando o ícone M e registrando descrição na barra de condições.",
   "type": "module",
-  "version": "0.1.8",
+  "version": "0.1.10",
   "authors": [
     {
       "name": "RodrigoSinistro"
     }
   ],
   "compatibility": {
-    "minimum": "13",
-    "verified": "13"
+    "minimum": "14",
+    "verified": "14"
   },
   "esmodules": [
     "scripts/d616-extempore-effects.mjs"
@@ -36,12 +36,15 @@
     "systems": [
       {
         "id": "multiverse-d616",
-        "type": "system"
+        "type": "system",
+        "compatibility": {
+          "minimum": "0.1.57"
+        }
       }
     ]
   },
   "url": "https://github.com/rodrigosinistro/D616-Extempore-Effects",
   "bugs": "https://github.com/rodrigosinistro/D616-Extempore-Effects/issues",
   "manifest": "https://raw.githubusercontent.com/rodrigosinistro/D616-Extempore-Effects/main/module.json",
-  "download": "https://github.com/rodrigosinistro/D616-Extempore-Effects/releases/download/v0.1.8/d616-extempore-effects-v0.1.8.zip"
+  "download": "https://github.com/rodrigosinistro/D616-Extempore-Effects/releases/download/v0.1.10/d616-extempore-effects-v0.1.10.zip"
 }

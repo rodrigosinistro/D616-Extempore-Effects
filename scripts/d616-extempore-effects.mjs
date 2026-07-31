@@ -28,7 +28,7 @@ function slugify(s) {
 }
 
 function getMIconPath() {
-  const sysId = game?.system?.id || "multiverse-d616";
+  const sysId = getSystemId();
   return `systems/${sysId}/icons/m.svg`;
 }
 
@@ -58,6 +58,61 @@ function escapeHtml(s) {
   }[ch]));
 }
 
+function getStatusEffectEntries() {
+  const effects = CONFIG?.statusEffects;
+  if (Array.isArray(effects)) return effects.filter(Boolean);
+  if (effects && typeof effects === "object") return Object.values(effects).filter(Boolean);
+  return [];
+}
+
+function getStatusEffectConfig(id) {
+  const effects = CONFIG?.statusEffects;
+  if (!effects) return null;
+  if (Array.isArray(effects)) return effects.find((e) => e?.id === id) ?? null;
+  if (effects && typeof effects === "object") return effects[id] ?? Object.values(effects).find((e) => e?.id === id) ?? null;
+  return null;
+}
+
+function getNextStatusEffectOrder() {
+  const orders = getStatusEffectEntries()
+    .map((e) => Number(e?.order))
+    .filter((n) => Number.isFinite(n));
+  return orders.length ? Math.max(...orders) + 1 : 1;
+}
+
+function setStatusEffectConfig(id, data) {
+  if (!CONFIG.statusEffects || typeof CONFIG.statusEffects !== "object") CONFIG.statusEffects = {};
+
+  const entry = { id, ...data };
+  if (Array.isArray(CONFIG.statusEffects)) {
+    const idx = CONFIG.statusEffects.findIndex((e) => e?.id === id);
+    if (idx >= 0) CONFIG.statusEffects[idx] = { ...CONFIG.statusEffects[idx], ...entry };
+    else CONFIG.statusEffects.push(entry);
+    return;
+  }
+
+  const existing = CONFIG.statusEffects[id] ?? {};
+  const order = Number.isFinite(Number(existing?.order)) ? Number(existing.order) : getNextStatusEffectOrder();
+  CONFIG.statusEffects[id] = { ...existing, ...entry, order };
+}
+
+function getMessageIdFromContext(li) {
+  const element = li?.[0] ?? li?.target ?? li?.currentTarget ?? li;
+  return (
+    element?.dataset?.messageId ??
+    li?.dataset?.messageId ??
+    li?.data?.("messageId") ??
+    li?.attr?.("data-message-id") ??
+    element?.closest?.(".chat-message")?.dataset?.messageId ??
+    null
+  );
+}
+
+function getMessageFromContext(li) {
+  const msgId = getMessageIdFromContext(li);
+  return msgId ? game.messages?.get?.(msgId) : null;
+}
+
 function getStoredConditions() {
   const raw = game.settings.get(MODULE_ID, STORE_SETTING);
   const arr = safeJsonParse(raw, []);
@@ -81,26 +136,27 @@ async function upsertStoredCondition(id, name, description = "") {
 }
 
 function ensureStatusEffectEntry(id, name) {
-  if (!Array.isArray(CONFIG.statusEffects)) CONFIG.statusEffects = [];
-  if (CONFIG.statusEffects.some((e) => e?.id === id)) return;
-
   const icon = getMIconPath();
-  CONFIG.statusEffects.push({
-    id,
+  const existing = getStatusEffectConfig(id);
+  const label = existing?.label ?? name;
+  setStatusEffectConfig(id, {
     name,
-    label: name,
+    label,
     img: icon,
-    icon: icon,
+    icon,
   });
 
-  // keep list sorted (system also sorts)
-  try {
-    const lang = game.i18n?.lang || navigator.language || "pt-BR";
-    CONFIG.statusEffects = CONFIG.statusEffects
-      .slice()
-      .sort((a, b) => (a?.name ?? "").localeCompare(b?.name ?? "", lang, { sensitivity: "base" }));
-  } catch (_e) {
-    // ignore
+  // In v13 CONFIG.statusEffects was an array; in v14 it is an object keyed by id.
+  // Keep the old array path sorted for backwards tolerance without relying on the deprecated API.
+  if (Array.isArray(CONFIG.statusEffects)) {
+    try {
+      const lang = game.i18n?.lang || navigator.language || "pt-BR";
+      CONFIG.statusEffects = CONFIG.statusEffects
+        .slice()
+        .sort((a, b) => (a?.name ?? "").localeCompare(b?.name ?? "", lang, { sensitivity: "base" }));
+    } catch (_e) {
+      // ignore
+    }
   }
 }
 
@@ -115,7 +171,9 @@ function ensureAllStoredInConfig() {
 // The system shows condition name+description from its conditions registry.
 // We add/update our extempore conditions into the system's world setting (customConditions)
 // so they show up in the same tray with a tooltip description.
-const SYS_MODULE_ID = game?.system?.id || "multiverse-d616";
+function getSystemId() {
+  return globalThis.game?.system?.id || "multiverse-d616";
+}
 const SYS_CUSTOM_COND_SETTING = "customConditions";
 
 function parseJsonArray(raw) {
@@ -131,7 +189,7 @@ async function upsertSystemCustomCondition(id, name, descriptionHtml) {
   if (!game.user?.isGM) return;
   let raw;
   try {
-    raw = game.settings.get(SYS_MODULE_ID, SYS_CUSTOM_COND_SETTING);
+    raw = game.settings.get(getSystemId(), SYS_CUSTOM_COND_SETTING);
   } catch (_e) {
     return;
   }
@@ -161,7 +219,7 @@ async function upsertSystemCustomCondition(id, name, descriptionHtml) {
 
   // Pretty-print so the system's manager UI remains readable.
   const next = JSON.stringify(arr, null, 2);
-  await game.settings.set(SYS_MODULE_ID, SYS_CUSTOM_COND_SETTING, next);
+  await game.settings.set(getSystemId(), SYS_CUSTOM_COND_SETTING, next);
 }
 
 async function ensureStoredInSystemCustomConditions() {
@@ -199,7 +257,7 @@ async function toggleStatus(actor, statusId, active) {
       if (ids.length) return await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
       return;
     }
-    const se = (CONFIG.statusEffects || []).find((x) => x.id === statusId);
+    const se = getStatusEffectConfig(statusId);
     const name = se?.name ?? statusId;
     const icon = se?.icon ?? se?.img ?? getMIconPath();
     return await actor.createEmbeddedDocuments("ActiveEffect", [
@@ -220,7 +278,14 @@ function uniqueActorsFromTokens(tokens) {
   for (const tok of tokens) {
     const a = tok?.actor;
     if (!a) continue;
-    map.set(a.id, a);
+    // Linked tokens may share one Actor update. Unlinked tokens use synthetic
+    // Actors and must remain independent even though their base actor.id is the
+    // same, so identify those by the TokenDocument UUID.
+    const tokenDocument = tok.document ?? tok;
+    const key = tokenDocument?.actorLink
+      ? `actor:${a.uuid ?? a.id}`
+      : `token:${tokenDocument?.uuid ?? tok.id ?? a.uuid ?? a.id}`;
+    map.set(key, a);
   }
   return Array.from(map.values());
 }
@@ -272,7 +337,7 @@ function htmlToTextLines(html) {
 
 function extractEffectName(message) {
   // Try to use system flags pointing to an item/power used
-  const sysFlags = message?.flags?.[game.system.id] ?? message?.flags?.["multiverse-d616"] ?? {};
+  const sysFlags = message?.flags?.[getSystemId()] ?? message?.flags?.["multiverse-d616"] ?? {};
   const itemId = sysFlags?.itemId ?? sysFlags?.sourceItemId ?? sysFlags?.originItemId ?? null;
   const actor = message?.speaker?.actor ? game.actors.get(message.speaker.actor) : null;
   if (itemId && actor?.items?.get) {
@@ -460,65 +525,42 @@ async function removeAllFromSelection() {
 
 function addChatContextOptions(options) {
   options.push({
-    name: `${t("D616EE.ContextMenuTitle")}: ${t("D616EE.CreateEffect")}`,
+    label: `${t("D616EE.ContextMenuTitle")}: ${t("D616EE.CreateEffect")}`,
     icon: '<i class="fas fa-plus"></i>',
-    condition: (li) => {
-      const msgId = li?.dataset?.messageId;
-      return !!msgId;
-    },
-    callback: async (li) => {
-      const msgId = li?.dataset?.messageId;
-      const message = game.messages.get(msgId);
+    visible: (li) => !!getMessageIdFromContext(li),
+    onClick: async (li) => {
+      const message = getMessageFromContext(li);
       if (message) await applyFromMessage(message);
     },
   });
 
   options.push({
-    name: `${t("D616EE.ContextMenuTitle")}: ${t("D616EE.RemoveEffect")}`,
+    label: `${t("D616EE.ContextMenuTitle")}: ${t("D616EE.RemoveEffect")}`,
     icon: '<i class="fas fa-minus"></i>',
-    condition: (li) => {
-      const msgId = li?.dataset?.messageId;
-      return !!msgId;
-    },
-    callback: async (li) => {
-      const msgId = li?.dataset?.messageId;
-      const message = game.messages.get(msgId);
+    visible: (li) => !!getMessageIdFromContext(li),
+    onClick: async (li) => {
+      const message = getMessageFromContext(li);
       if (message) await removeFromMessage(message);
     },
   });
 
   options.push({
-    name: `${t("D616EE.ContextMenuTitle")}: ${t("D616EE.RemoveAll")}`,
+    label: `${t("D616EE.ContextMenuTitle")}: ${t("D616EE.RemoveAll")}`,
     icon: '<i class="fas fa-trash"></i>',
-    condition: () => true,
-    callback: async () => {
+    visible: () => true,
+    onClick: async () => {
       await removeAllFromSelection();
     },
   });
 }
 
 function patchChatContextIfNeeded() {
-  // Preferred hook (still supported in v13)
-  Hooks.on("getChatLogEntryContext", (_html, options) => addChatContextOptions(options));
-
-  // Extra safety: patch the method directly if the hook isn't firing in a future update
-  try {
-    const proto = foundry?.applications?.sidebar?.tabs?.ChatLog?.prototype;
-    if (!proto || !proto._getEntryContextOptions) return;
-    if (proto._d616ee_patched) return;
-
-    const original = proto._getEntryContextOptions;
-    proto._getEntryContextOptions = function (...args) {
-      const opts = original.apply(this, args);
-      try {
-        addChatContextOptions(opts);
-      } catch (_e) {}
-      return opts;
-    };
-    proto._d616ee_patched = true;
-  } catch (_e) {
-    // ignore
-  }
+  // Foundry v13+ ApplicationV2 context menus use document-specific hooks.
+  // Foundry v14 entries use label/visible/onClick and pass an HTMLElement to
+  // the callbacks, which getMessageIdFromContext already supports.
+  Hooks.on("getChatMessageContextOptions", (_application, options) =>
+    addChatContextOptions(options)
+  );
 }
 
 Hooks.once("init", () => {
